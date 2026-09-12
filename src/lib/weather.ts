@@ -9,6 +9,16 @@ import type { Location, WeatherReading } from './types';
 const GEOCODE_URL = 'https://geocoding-api.open-meteo.com/v1/search';
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 
+async function errorReason(res: Response, prefix: string): Promise<string> {
+  try {
+    const body = (await res.json()) as { reason?: string };
+    if (body.reason) return `${prefix}: ${body.reason}`;
+  } catch {
+    /* body was not JSON */
+  }
+  return `${prefix} (${res.status})`;
+}
+
 interface GeocodeResult {
   name: string;
   country?: string;
@@ -20,7 +30,7 @@ interface GeocodeResult {
 export async function geocode(query: string): Promise<Location[]> {
   const url = `${GEOCODE_URL}?name=${encodeURIComponent(query)}&count=6&language=en&format=json`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Geocoding failed (${res.status})`);
+  if (!res.ok) throw new Error(await errorReason(res, 'Geocoding failed'));
   const data = (await res.json()) as { results?: GeocodeResult[] };
   return (data.results ?? []).map((r) => ({
     name: r.admin1 && r.admin1 !== r.name ? `${r.name}, ${r.admin1}` : r.name,
@@ -40,7 +50,7 @@ export async function fetchWeather(lat: number, lon: number): Promise<WeatherRea
     timezone: 'auto',
   });
   const res = await fetch(`${FORECAST_URL}?${params}`);
-  if (!res.ok) throw new Error(`Weather request failed (${res.status})`);
+  if (!res.ok) throw new Error(await errorReason(res, 'Weather request failed'));
   const data = (await res.json()) as {
     timezone?: string;
     current: { time: string; temperature_2m: number; relative_humidity_2m: number };
