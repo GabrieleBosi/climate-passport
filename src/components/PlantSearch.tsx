@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { searchPlants } from '../data/plants';
 import type { Plant } from '../lib/types';
 
@@ -11,11 +11,29 @@ export default function PlantSearch({ selected, onSelect }: Props) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const results = useMemo(() => searchPlants(query), [query]);
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  // Close the result list when the user clicks elsewhere or presses Escape.
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
 
   return (
     <section className="panel">
       <h2 className="panel__title">1. Pick a plant</h2>
-      <div className="search">
+      <div className="search" ref={boxRef}>
         <input
           className="input"
           type="search"
@@ -26,17 +44,23 @@ export default function PlantSearch({ selected, onSelect }: Props) {
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              // Stop the native search-input clear, which would reopen the list via onChange.
+              e.preventDefault();
+              setOpen(false);
+            }
+          }}
           aria-label="Search plants"
         />
         {open && (
-          <ul className="search__results" role="listbox">
+          <ul className="search__results">
             {results.length === 0 && <li className="search__empty">No match. Try a different name.</li>}
             {results.map((p) => (
               <li key={p.id}>
                 <button
                   type="button"
-                  role="option"
-                  aria-selected={selected?.id === p.id}
+                  aria-pressed={selected?.id === p.id}
                   className={`search__item ${selected?.id === p.id ? 'is-selected' : ''}`}
                   onClick={() => {
                     onSelect(p);

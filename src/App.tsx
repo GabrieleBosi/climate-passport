@@ -25,9 +25,11 @@ export default function App() {
   const [exporting, setExporting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const noticeTimer = useRef<number | undefined>(undefined);
 
   // Fetch weather whenever the location changes.
   useEffect(() => {
+    setWeather(null);
     if (!location) return;
     let cancelled = false;
     setWeatherLoading(true);
@@ -61,7 +63,8 @@ export default function App() {
 
   const flash = useCallback((msg: string) => {
     setNotice(msg);
-    window.setTimeout(() => setNotice(null), 2500);
+    window.clearTimeout(noticeTimer.current);
+    noticeTimer.current = window.setTimeout(() => setNotice(null), 2500);
   }, []);
 
   function savePlant() {
