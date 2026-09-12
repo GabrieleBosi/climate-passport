@@ -6,6 +6,10 @@ Every houseplant carries the climate of its ancestors. Climate Passport compares
 
 **Live app:** https://plant-climate-passport.netlify.app
 
+<p align="center">
+  <img src="docs/passport-card.png" alt="Climate Passport card for a Swiss cheese plant in Berlin: 60 match, humidity far below the native range" width="420" />
+</p>
+
 ---
 
 ## How it works

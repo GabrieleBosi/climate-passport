@@ -22,8 +22,23 @@ function write(key: string, value: unknown): void {
   }
 }
 
+function isLocation(v: unknown): v is Location {
+  if (!v || typeof v !== 'object') return false;
+  const l = v as Partial<Location>;
+  return typeof l.name === 'string' && Number.isFinite(l.lat) && Number.isFinite(l.lon);
+}
+
+function isSavedPlant(v: unknown): v is SavedPlant {
+  if (!v || typeof v !== 'object') return false;
+  const s = v as Partial<SavedPlant>;
+  return typeof s.id === 'string' && typeof s.plantId === 'string' && isLocation(s.location);
+}
+
+/** Load the collection, dropping any entry that does not have the expected shape. */
 export function loadCollection(): SavedPlant[] {
-  return read<SavedPlant[]>(COLLECTION_KEY, []);
+  const raw = read<unknown>(COLLECTION_KEY, []);
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(isSavedPlant).map((s) => ({ ...s, overrides: s.overrides ?? {} }));
 }
 
 export function saveCollection(items: SavedPlant[]): void {
@@ -36,7 +51,9 @@ export interface HomeProfile {
 }
 
 export function loadHome(): HomeProfile | null {
-  return read<HomeProfile | null>(HOME_KEY, null);
+  const raw = read<Partial<HomeProfile> | null>(HOME_KEY, null);
+  if (!raw || !isLocation(raw.location)) return null;
+  return { location: raw.location, overrides: raw.overrides ?? {} };
 }
 
 export function saveHome(profile: HomeProfile): void {

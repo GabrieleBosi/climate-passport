@@ -20,6 +20,14 @@ import { estimateIndoor } from './humidity';
 
 const DEFAULT_LIGHT = 'medium' as const;
 
+/** Physical bounds for readings; anything outside is a typo, not a room. */
+export const HUMIDITY_BOUNDS: [number, number] = [0, 100];
+export const TEMP_BOUNDS: [number, number] = [-10, 45];
+
+function clamp(n: number, [lo, hi]: [number, number]): number {
+  return Math.min(hi, Math.max(lo, n));
+}
+
 /** Resolve what the plant actually experiences: manual readings win over estimates. */
 export function resolveConditions(
   weather: WeatherReading | null,
@@ -30,8 +38,8 @@ export function resolveConditions(
   const temp = overrides.temp ?? estimate?.temp;
   if (humidity === undefined || temp === undefined) return null;
   return {
-    humidity,
-    temp,
+    humidity: clamp(humidity, HUMIDITY_BOUNDS),
+    temp: clamp(temp, TEMP_BOUNDS),
     light: overrides.light ?? DEFAULT_LIGHT,
     source: {
       humidity: overrides.humidity !== undefined ? 'manual' : 'estimated',
