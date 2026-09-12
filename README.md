@@ -1,99 +1,134 @@
-# Climate Passport
+# 🌿 Climate Passport
 
-A web app that tells you where your houseplant *thinks* it lives.
+**Where does your houseplant think it lives?**
 
-Pick a species, enter your city, and the app compares the plant's native
-ancestral climate (humidity, temperature, light) with the conditions in your
-home. It surfaces the biggest mismatches as plain-language insights and
-generates a shareable **Climate Passport** card that you can download as a PNG.
+Every houseplant carries the climate of its ancestors. Climate Passport compares that native climate with the room your plant sits in now, tells you which gap it feels most, and gives you a shareable passport card.
 
-## Features (v1)
+**Live app:** https://plant-climate-passport.netlify.app
 
-- **Plant lookup** from a seeded database of 36 common houseplants, each with
-  scientific name, native region, habitat, a short origin story, and a native
-  climate profile (humidity range, temperature range, light, rainfall pattern).
-- **Home profile** from a city or postcode, or the browser's location. Current
-  outdoor temperature and humidity come from [Open-Meteo](https://open-meteo.com/)
-  (free, no API key).
-- **Indoor estimate**: outdoor readings are converted to a likely indoor value.
-  The app assumes a room heated to 20 °C or cooled to 26 °C that holds the same
-  moisture as the outside air. This is why a cold, humid winter day turns into
-  a dry apartment.
-- **Manual overrides** for indoor humidity, temperature, and light level, for
-  people with a hygrometer or a known windowsill.
-- **Comparison engine** that computes signed deltas against the native ranges,
-  ranks them by severity, and writes 2–3 insights plus a verdict and a
-  0–100 match score.
-- **Passport card** with a small world map that marks the native region, a
-  native-vs-home table, a verdict line, and a stamp. Export to PNG or share
-  the summary text.
-- **Collection**: save plants with their location and readings to
-  `localStorage` and reopen them later.
+---
 
-## Install and run
+## How it works
 
-Requirements: Node.js 18 or later.
+1. **Pick a plant.** Search 36 common houseplants by common or scientific name. You get the native region, the habitat, and a short origin story.
+2. **Say where it lives now.** Type a city or postcode, or share your location. The app fetches the current outdoor temperature and humidity from Open-Meteo, then estimates what that air becomes inside a heated or cooled room.
+3. **Add indoor readings, if you have them.** A hygrometer or thermometer reading, and the light at the plant's spot, replace the estimate.
+4. **Read the insights.** The app ranks the humidity, temperature, and light gaps by severity and explains each one in plain language, for example "Your room is running ~40 points drier than the 70–90% humidity of the lowland tropical rainforest."
+5. **Get the passport.** A card shows the plant, a world map with its origin, native versus home conditions side by side, a match score, and a one-line verdict. Download it as a PNG, share the summary, or save the plant to your collection.
+
+No account. No backend. Your collection stays in your browser.
+
+---
+
+## Run it locally
+
+You need Node.js 18 or newer.
 
 ```bash
+git clone https://github.com/GabrieleBosi/climate-passport.git
+cd climate-passport
 npm install
 npm run dev
 ```
 
-Open the URL that Vite prints (usually `http://localhost:5173`).
+Open the address Vite prints, usually http://localhost:5173.
 
-Other commands:
+| Command           | What it does                                   |
+| ----------------- | ---------------------------------------------- |
+| `npm run dev`     | Start the dev server with hot reload           |
+| `npm test`        | Run the unit tests                             |
+| `npm run build`   | Type-check and build the production bundle     |
+| `npm run preview` | Serve the production bundle locally            |
 
-```bash
-npm test        # unit tests for the comparison engine and plant data
-npm run build   # type-check and build to dist/
-npm run preview # serve the production build
-```
+---
 
-There is no backend. The browser calls Open-Meteo directly, so the app works
-from any static host.
+## Deploy
 
-## Project structure
+The app is a static site. Netlify builds it from `main` on every push using `netlify.toml`, which sets the build command, the `dist` folder, Node 22, and a single-page-app redirect.
+
+To deploy anywhere else, run `npm run build` and host the `dist` folder.
+
+---
+
+## Project layout
 
 ```
 src/
-  main.tsx                 entry point
-  App.tsx                  page state, weather fetch, save/export actions
-  styles.css               all styles (the .passport block is the card)
-  components/
-    PlantSearch.tsx        search box and species summary
-    HomeProfile.tsx        location lookup and outdoor/indoor readings
-    IndoorOverrides.tsx    manual humidity, temperature and light inputs
-    Insights.tsx           ranked plain-language insights
-    PassportCard.tsx       the shareable card
-    WorldMap.tsx           small SVG map with an origin marker
-    Collection.tsx         saved plants list
-  data/
-    plants.ts              seeded species database (sources in comments)
-    world.ts               simplified land outlines for the map
-  lib/
-    types.ts               shared types
-    compare.ts             comparison engine, scoring, verdicts
-    humidity.ts            dew point maths for the indoor estimate
-    weather.ts             Open-Meteo geocoding and forecast client
-    storage.ts             localStorage persistence
-    compare.test.ts        unit tests
+├── App.tsx                 page state, weather fetch, save and export actions
+├── styles.css              all styles; the .passport block is the card
+├── components/
+│   ├── PlantSearch.tsx     search box and species summary
+│   ├── HomeProfile.tsx     location lookup, outdoor and indoor readings
+│   ├── IndoorOverrides.tsx manual humidity, temperature and light inputs
+│   ├── Insights.tsx        ranked plain-language insights
+│   ├── PassportCard.tsx    the shareable card
+│   ├── WorldMap.tsx        small SVG map with the origin marker
+│   └── Collection.tsx      saved plants
+├── data/
+│   ├── plants.ts           the plant database
+│   └── world.ts            simplified land outlines for the map
+└── lib/
+    ├── compare.ts          comparison engine, scoring, verdicts
+    ├── humidity.ts         dew-point maths for the indoor estimate
+    ├── weather.ts          Open-Meteo geocoding and forecast client
+    ├── storage.ts          localStorage persistence
+    ├── types.ts            shared types
+    └── compare.test.ts     unit tests
 ```
 
-## Data notes
+---
 
-Native ranges and habitats come from general botanical references: Kew Plants
-of the World Online, the Missouri Botanical Garden Plant Finder, the RHS plant
-database, and Wikipedia species pages. Climate bands are typical growing-season
-values for the native habitat, rounded to sensible ranges. They describe the
-ancestral niche, not the tightest tolerance of a cultivated plant.
+## Add a plant
 
-To add a species, append an entry to `src/data/plants.ts`. The test suite
-checks that every entry has valid ranges and coordinates.
+Append an entry to `src/data/plants.ts`:
 
-## Ideas for v2
+```ts
+{
+  id: 'ficus-lyrata',
+  commonName: 'Fiddle-leaf fig',
+  scientificName: 'Ficus lyrata',
+  family: 'Moraceae',
+  nativeRegion: 'West Africa, from Sierra Leone to Cameroon',
+  regionLabel: 'West Africa',
+  habitat: 'lowland tropical rainforest',
+  origin: { lat: 5.0, lon: -1.0 },
+  climate: {
+    humidity: [70, 90],
+    temp: [22, 32],
+    light: 'bright-indirect',
+    rainfall: 'Heavy rain most of the year, with a short drier season',
+  },
+  story: 'Starts life high in the canopy as a strangler fig ...',
+}
+```
 
-- Seasonal view: show how the gap changes through the year using Open-Meteo
-  climate normals.
-- Hardware input: read a Bluetooth or MQTT hygrometer.
-- More species, and cultivar-specific tolerances.
-- Passport sharing by URL instead of PNG only.
+Then run `npm test`. The tests check that every entry has a unique id, valid ranges, and coordinates inside the map.
+
+Light levels are `low`, `medium`, `bright-indirect`, or `direct`. Humidity is % RH and temperature is °C.
+
+---
+
+## How the numbers are made
+
+**Indoor estimate.** Rooms hold roughly the same moisture as the air outside, but they are heated to about 20 °C or cooled to about 26 °C. The app converts the outdoor reading to a dew point and recomputes relative humidity at the indoor temperature. This is why a cold, wet winter day becomes a dry apartment.
+
+**Severity.** Each factor gets a signed distance from the native range. Humidity bands are 5, 15, and 30 points. Temperature bands are 2, 5, and 9 °C. Light is one or two steps on the four-level scale.
+
+**Score.** A weighted 0–100 match: humidity 40, light 35, temperature 25. Each factor loses part of its weight by severity.
+
+**Data.** Native ranges and habitats come from Kew Plants of the World Online, the Missouri Botanical Garden Plant Finder, the RHS plant database, and Wikipedia species pages. Climate bands are typical growing-season values for the habitat, rounded to sensible ranges. They describe the ancestral niche, not the tightest tolerance of a cultivated plant.
+
+---
+
+## Roadmap ideas
+
+- Seasonal view using Open-Meteo climate normals
+- Hardware input from a Bluetooth or MQTT hygrometer
+- More species and cultivar-specific tolerances
+- Share a passport by URL, not only as a PNG
+
+---
+
+## Credits
+
+Weather and geocoding by [Open-Meteo](https://open-meteo.com/). Built with React, TypeScript, and Vite.
