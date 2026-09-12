@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toPng } from 'html-to-image';
+import { toBlob, toPng } from 'html-to-image';
 import PlantSearch from './components/PlantSearch';
 import HomeProfile from './components/HomeProfile';
 import IndoorOverrides from './components/IndoorOverrides';
@@ -128,13 +128,30 @@ export default function App() {
     const text = `${plant.commonName} (${plant.scientificName}) — native to ${plant.regionLabel}. ${comparison.verdict}: ${comparison.tagline} Climate match ${comparison.score}/100 in ${location.name}.`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Climate Passport', text });
+        // Phones can share the card image itself; fall back to text where files are not supported.
+        const file = await cardAsFile();
+        if (file && navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ title: 'Climate Passport', text, files: [file] });
+        } else {
+          await navigator.share({ title: 'Climate Passport', text });
+        }
       } else {
         await navigator.clipboard.writeText(text);
         flash('Summary copied to clipboard');
       }
     } catch {
       /* user cancelled the share sheet */
+    }
+  }
+
+  async function cardAsFile(): Promise<File | null> {
+    const node = cardRef.current;
+    if (!node || !plant) return null;
+    try {
+      const blob = await toBlob(node, { pixelRatio: 2, cacheBust: true });
+      return blob ? new File([blob], `climate-passport-${plant.id}.png`, { type: 'image/png' }) : null;
+    } catch {
+      return null;
     }
   }
 

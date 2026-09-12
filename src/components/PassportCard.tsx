@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 import WorldMap from './WorldMap';
 import { LIGHT_LABELS } from '../lib/types';
-import type { Comparison, CurrentConditions, Location, Plant } from '../lib/types';
+import type { Comparison, CurrentConditions, Location, Plant, Severity } from '../lib/types';
 
 interface Props {
   plant: Plant;
@@ -10,7 +10,7 @@ interface Props {
   comparison: Comparison;
 }
 
-function tone(severity: string): string {
+function tone(severity: Severity): string {
   return severity === 'ok' ? 'good' : severity === 'mild' ? 'warn' : 'bad';
 }
 
@@ -35,7 +35,7 @@ const PassportCard = forwardRef<HTMLDivElement, Props>(function PassportCard(
           <h3 className="passport__name">{plant.commonName}</h3>
           <p className="passport__sci">{plant.scientificName}</p>
         </div>
-        <div className="passport__score" aria-label={`Match score ${comparison.score} out of 100`}>
+        <div className="passport__score" role="img" aria-label={`Match score ${comparison.score} out of 100`}>
           <span className="passport__score-num">{comparison.score}</span>
           <span className="passport__score-label">match</span>
         </div>

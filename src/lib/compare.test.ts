@@ -120,3 +120,14 @@ describe('plant data', () => {
     expect(PLANTS.length).toBeGreaterThanOrEqual(20);
   });
 });
+
+describe('resolveConditions clamps typos', () => {
+  it('limits humidity to 0–100 and temperature to -10–45', () => {
+    const c = resolveConditions(null, { humidity: 150, temp: 90 });
+    expect(c?.humidity).toBe(100);
+    expect(c?.temp).toBe(45);
+    const d = resolveConditions(null, { humidity: -5, temp: -40 });
+    expect(d?.humidity).toBe(0);
+    expect(d?.temp).toBe(-10);
+  });
+});

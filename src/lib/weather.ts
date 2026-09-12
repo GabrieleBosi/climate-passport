@@ -53,9 +53,12 @@ export async function fetchWeather(lat: number, lon: number): Promise<WeatherRea
   if (!res.ok) throw new Error(await errorReason(res, 'Weather request failed'));
   const data = (await res.json()) as {
     timezone?: string;
-    current: { time: string; temperature_2m: number; relative_humidity_2m: number };
+    current?: { time: string; temperature_2m: number; relative_humidity_2m: number };
     daily?: { temperature_2m_max: number[]; temperature_2m_min: number[] };
   };
+  if (!data.current || !Number.isFinite(data.current.temperature_2m) || !Number.isFinite(data.current.relative_humidity_2m)) {
+    throw new Error('Weather service returned no current reading for this place');
+  }
   return {
     temp: data.current.temperature_2m,
     humidity: data.current.relative_humidity_2m,
